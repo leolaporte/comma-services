@@ -22,6 +22,7 @@ pub fn render(frame: &mut Frame, app: &App) {
     match app.mode {
         Mode::Confirm => render_confirm_modal(frame, app),
         Mode::Applying => render_applying_overlay(frame),
+        Mode::Info => render_info_modal(frame, app),
         _ => {}
     }
 }
@@ -98,7 +99,13 @@ fn render_service_list(frame: &mut Frame, app: &App, area: Rect) {
             }
             VisibleItem::Service(svc_idx) => {
                 let svc = &app.services[*svc_idx];
-                let checkbox = if svc.enabled { "[✓]" } else { "[ ]" };
+                let checkbox = if svc.enabled {
+                    "[✓]"
+                } else if svc.active {
+                    "[●]" // running via socket/dependency but not enabled
+                } else {
+                    "[ ]"
+                };
                 let dirty = app.is_service_dirty(svc);
 
                 let style = if is_cursor && dirty {
@@ -113,11 +120,22 @@ fn render_service_list(frame: &mut Frame, app: &App, area: Rect) {
                     Style::default()
                 };
 
+                let active_hint = if svc.active && !svc.enabled {
+                    " (running)"
+                } else {
+                    ""
+                };
                 let cursor_indicator = if is_cursor { ">" } else { " " };
-                Line::from(Span::styled(
-                    format!("{cursor_indicator}   {checkbox} {}", svc.name),
-                    style,
-                ))
+                Line::from(vec![
+                    Span::styled(
+                        format!("{cursor_indicator}   {checkbox} {}", svc.name),
+                        style,
+                    ),
+                    Span::styled(
+                        active_hint,
+                        Style::default().fg(Color::Green),
+                    ),
+                ])
             }
         };
 
@@ -181,7 +199,7 @@ fn render_status_bar(frame: &mut Frame, app: &App, area: Rect) {
                 }
             } else {
                 spans.push(Span::styled(
-                    " Space: toggle  Enter: apply  q: quit",
+                    " Space: toggle  Enter: apply  i: info  q: quit",
                     Style::default().fg(Color::DarkGray),
                 ));
             }
@@ -214,6 +232,111 @@ fn render_applying_overlay(frame: &mut Frame) {
     ))
     .block(block);
     frame.render_widget(text, modal);
+}
+
+fn render_info_modal(frame: &mut Frame, app: &App) {
+    let info = match &app.info {
+        Some(info) => info,
+        None => return,
+    };
+
+    let area = frame.area();
+
+    let label_style = Style::default()
+        .fg(Color::Cyan)
+        .add_modifier(Modifier::BOLD);
+    let value_style = Style::default();
+
+    let mut lines = vec![Line::raw("")];
+
+    lines.push(Line::from(vec![
+        Span::styled("  Description: ", label_style),
+        Span::styled(&info.description, value_style),
+    ]));
+    lines.push(Line::raw(""));
+
+    if !info.extra_info.is_empty() {
+        // Word-wrap the extra info manually to fit the modal
+        let wrap_width = 56usize; // modal inner width minus padding
+        let mut remaining = info.extra_info.as_str();
+        while !remaining.is_empty() {
+            let (chunk, rest) = if remaining.len() <= wrap_width {
+                (remaining, "")
+            } else if let Some(pos) = remaining[..wrap_width].rfind(' ') {
+                (&remaining[..pos], remaining[pos + 1..].trim_start())
+            } else {
+                (&remaining[..wrap_width], &remaining[wrap_width..])
+            };
+            lines.push(Line::from(Span::styled(
+                format!("  {chunk}"),
+                Style::default().fg(Color::White),
+            )));
+            remaining = rest;
+        }
+        lines.push(Line::raw(""));
+    }
+
+    let state_color = match info.active_state.as_str() {
+        "active" => Color::Green,
+        "failed" => Color::Red,
+        _ => Color::Yellow,
+    };
+    lines.push(Line::from(vec![
+        Span::styled("  State:       ", label_style),
+        Span::styled(
+            format!("{} ({})", info.active_state, info.sub_state),
+            Style::default().fg(state_color),
+        ),
+    ]));
+    lines.push(Line::raw(""));
+
+    if !info.triggered_by.is_empty() {
+        lines.push(Line::from(vec![
+            Span::styled("  Triggered by:", label_style),
+            Span::styled(format!(" {}", info.triggered_by), value_style),
+        ]));
+        lines.push(Line::raw(""));
+    }
+
+    if !info.documentation.is_empty() {
+        lines.push(Line::from(vec![
+            Span::styled("  Docs:        ", label_style),
+            Span::styled(&info.documentation, Style::default().fg(Color::Blue)),
+        ]));
+        lines.push(Line::raw(""));
+    }
+
+    if !info.fragment_path.is_empty() {
+        lines.push(Line::from(vec![
+            Span::styled("  Unit file:   ", label_style),
+            Span::styled(&info.fragment_path, Style::default().fg(Color::DarkGray)),
+        ]));
+        lines.push(Line::raw(""));
+    }
+
+    lines.push(Line::from(Span::styled(
+        "  [Esc/i] Close",
+        Style::default().fg(Color::DarkGray),
+    )));
+
+    let modal_width = 64u16.min(area.width.saturating_sub(4));
+    let modal_height = (lines.len() as u16 + 2).min(area.height.saturating_sub(4));
+    let modal_area = Rect {
+        x: (area.width.saturating_sub(modal_width)) / 2,
+        y: (area.height.saturating_sub(modal_height)) / 2,
+        width: modal_width,
+        height: modal_height,
+    };
+
+    frame.render_widget(Clear, modal_area);
+
+    let block = Block::default()
+        .title(" Service Info ")
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::Cyan));
+
+    let paragraph = Paragraph::new(lines).block(block).wrap(Wrap { trim: false });
+    frame.render_widget(paragraph, modal_area);
 }
 
 fn render_confirm_modal(frame: &mut Frame, app: &App) {

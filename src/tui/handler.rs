@@ -19,6 +19,7 @@ pub fn handle_event(app: &mut App, event: Event) -> Action {
             Mode::Filter => handle_filter(app, key.code),
             Mode::Confirm => handle_confirm(app, key.code),
             Mode::Applying => Action::None, // ignore input while applying
+            Mode::Info => handle_info(app, key.code),
         };
     }
     Action::None
@@ -49,6 +50,7 @@ fn handle_normal(app: &mut App, code: KeyCode) -> Action {
                 app.cursor = 0;
             }
         }
+        KeyCode::Char('i') => app.show_info(),
         KeyCode::Char('/') => {
             app.mode = Mode::Filter;
             app.filter.clear();
@@ -80,6 +82,17 @@ fn handle_filter(app: &mut App, code: KeyCode) -> Action {
             app.filter.push(c);
             app.rebuild_visible();
             app.cursor = 0;
+        }
+        _ => {}
+    }
+    Action::None
+}
+
+fn handle_info(app: &mut App, code: KeyCode) -> Action {
+    match code {
+        KeyCode::Esc | KeyCode::Char('i') | KeyCode::Char('q') => {
+            app.mode = Mode::Normal;
+            app.info = None;
         }
         _ => {}
     }

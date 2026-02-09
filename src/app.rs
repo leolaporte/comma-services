@@ -2,7 +2,8 @@ use std::collections::{BTreeMap, HashSet};
 
 use crate::categories::{categorize, CATEGORY_ORDER};
 use crate::systemd::{
-    list_services, ChangeAction, ChangeResult, PendingChange, Service, ServiceScope,
+    get_service_info, list_services, ChangeAction, ChangeResult, PendingChange, Service,
+    ServiceInfo, ServiceScope,
 };
 use anyhow::Result;
 
@@ -18,6 +19,7 @@ pub enum Mode {
     Filter,
     Confirm,
     Applying,
+    Info,
 }
 
 #[derive(Debug)]
@@ -39,6 +41,7 @@ pub struct App {
     pub cursor: usize,           // index into visible_items
     pub visible_items: Vec<VisibleItem>,
     pub results: Vec<ChangeResult>,
+    pub info: Option<ServiceInfo>,
     pub should_quit: bool,
 }
 
@@ -61,6 +64,7 @@ impl App {
             cursor: 0,
             visible_items: Vec::new(),
             results: Vec::new(),
+            info: None,
             should_quit: false,
         };
         app.refresh()?;
@@ -230,5 +234,17 @@ impl App {
 
     pub fn is_service_dirty(&self, svc: &Service) -> bool {
         self.toggled.contains(&svc.name)
+    }
+
+    pub fn show_info(&mut self) {
+        if let Some(VisibleItem::Service(svc_idx)) = self.visible_items.get(self.cursor) {
+            let svc = &self.services[*svc_idx];
+            let scope = match self.tab {
+                Tab::System => ServiceScope::System,
+                Tab::User => ServiceScope::User,
+            };
+            self.info = Some(get_service_info(&scope, &svc.name));
+            self.mode = Mode::Info;
+        }
     }
 }
