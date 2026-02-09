@@ -1,0 +1,21 @@
+[package]
+name = "comma-services"
+version = "0.1.0"
+edition = "2021"
+description = "TUI for managing systemd services"
+
+[[bin]]
+name = "comma-services"
+path = "src/main.rs"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+opt-level = "z"
+
+[dependencies]
+ratatui = "0.30"
+crossterm = "0.28"
+tokio = { version = "1", features = ["full"] }
+anyhow = "1.0"
