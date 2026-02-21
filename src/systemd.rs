@@ -18,7 +18,6 @@ pub struct Service {
     pub name: String,
     pub enabled: bool,
     pub active: bool,
-    pub scope: ServiceScope,
 }
 
 pub fn list_services(scope: &ServiceScope) -> Result<Vec<Service>> {
@@ -27,7 +26,12 @@ pub fn list_services(scope: &ServiceScope) -> Result<Vec<Service>> {
     if *scope == ServiceScope::User {
         cmd.arg("--user");
     }
-    cmd.args(["list-unit-files", "--type=service", "--no-pager", "--no-legend"]);
+    cmd.args([
+        "list-unit-files",
+        "--type=service",
+        "--no-pager",
+        "--no-legend",
+    ]);
 
     let output = cmd.output().context("Failed to run systemctl")?;
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -57,7 +61,6 @@ pub fn list_services(scope: &ServiceScope) -> Result<Vec<Service>> {
                     name,
                     enabled,
                     active,
-                    scope: scope.clone(),
                 })
             } else {
                 None
@@ -88,9 +91,7 @@ fn get_active_services(scope: &ServiceScope) -> std::collections::HashSet<String
 
     String::from_utf8_lossy(&output.stdout)
         .lines()
-        .filter_map(|line| {
-            line.split_whitespace().next().map(|s| s.to_string())
-        })
+        .filter_map(|line| line.split_whitespace().next().map(|s| s.to_string()))
         .collect()
 }
 
@@ -284,7 +285,6 @@ fn curated_description(service: &str) -> Option<&'static str> {
         _ => None,
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub enum ChangeAction {

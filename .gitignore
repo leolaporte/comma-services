@@ -1,1 +1,4 @@
 /target
+!.github/
+!.github/workflows/
+!.github/workflows/*.yml

@@ -32,13 +32,13 @@ pub struct CategoryGroup {
 #[derive(Debug)]
 pub struct App {
     pub services: Vec<Service>,
-    pub toggled: HashSet<String>,  // service names with pending changes
+    pub toggled: HashSet<String>, // service names with pending changes
     pub original_state: std::collections::HashMap<String, bool>, // name -> was_enabled
     pub tab: Tab,
     pub mode: Mode,
     pub filter: String,
     pub categories: Vec<CategoryGroup>,
-    pub cursor: usize,           // index into visible_items
+    pub cursor: usize, // index into visible_items
     pub visible_items: Vec<VisibleItem>,
     pub results: Vec<ChangeResult>,
     pub info: Option<ServiceInfo>,
@@ -86,7 +86,7 @@ impl App {
         self.toggled.clear();
         self.rebuild_categories();
         self.rebuild_visible();
-        self.cursor = if self.visible_items.is_empty() { 0 } else { 0 };
+        self.cursor = 0;
         Ok(())
     }
 

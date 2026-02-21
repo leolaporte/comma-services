@@ -13,10 +13,18 @@ pub const CATEGORY_ORDER: &[&str] = &[
 pub fn categorize(service_name: &str) -> &'static str {
     let name = service_name.trim_end_matches(".service");
 
-    if matches_any(name, &[
-        "NetworkManager", "wpa_supplicant", "systemd-networkd",
-        "systemd-resolved", "iwd", "dhcpcd", "connman",
-    ]) {
+    if matches_any(
+        name,
+        &[
+            "NetworkManager",
+            "wpa_supplicant",
+            "systemd-networkd",
+            "systemd-resolved",
+            "iwd",
+            "dhcpcd",
+            "connman",
+        ],
+    ) {
         return "Network";
     }
 

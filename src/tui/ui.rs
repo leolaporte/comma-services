@@ -79,21 +79,12 @@ fn render_service_list(frame: &mut Frame, app: &App, area: Rect) {
                 let cat = &app.categories[*cat_idx];
                 let arrow = if cat.collapsed { "▸" } else { "▾" };
                 let count = cat.services.len();
-                let style = if is_cursor {
-                    Style::default()
-                        .fg(Color::Cyan)
-                        .add_modifier(Modifier::BOLD)
-                } else {
-                    Style::default()
-                        .fg(Color::Cyan)
-                        .add_modifier(Modifier::BOLD)
-                };
+                let style = Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD);
                 let cursor_indicator = if is_cursor { ">" } else { " " };
                 Line::from(vec![
-                    Span::styled(
-                        format!("{cursor_indicator} {arrow} {}", cat.name),
-                        style,
-                    ),
+                    Span::styled(format!("{cursor_indicator} {arrow} {}", cat.name), style),
                     Span::styled(format!(" ({count})"), Style::default().fg(Color::DarkGray)),
                 ])
             }
@@ -131,10 +122,7 @@ fn render_service_list(frame: &mut Frame, app: &App, area: Rect) {
                         format!("{cursor_indicator}   {checkbox} {}", svc.name),
                         style,
                     ),
-                    Span::styled(
-                        active_hint,
-                        Style::default().fg(Color::Green),
-                    ),
+                    Span::styled(active_hint, Style::default().fg(Color::Green)),
                 ])
             }
         };
@@ -147,17 +135,15 @@ fn render_service_list(frame: &mut Frame, app: &App, area: Rect) {
 
 fn render_status_bar(frame: &mut Frame, app: &App, area: Rect) {
     let line = match app.mode {
-        Mode::Filter => {
-            Line::from(vec![
-                Span::styled(" /: ", Style::default().fg(Color::Cyan)),
-                Span::raw(&app.filter),
-                Span::styled("▏", Style::default().fg(Color::Cyan)),
-                Span::raw("  "),
-                Span::styled("[Enter] Keep", Style::default().fg(Color::Green)),
-                Span::raw("  "),
-                Span::styled("[Esc] Clear", Style::default().fg(Color::DarkGray)),
-            ])
-        }
+        Mode::Filter => Line::from(vec![
+            Span::styled(" /: ", Style::default().fg(Color::Cyan)),
+            Span::raw(&app.filter),
+            Span::styled("▏", Style::default().fg(Color::Cyan)),
+            Span::raw("  "),
+            Span::styled("[Enter] Keep", Style::default().fg(Color::Green)),
+            Span::raw("  "),
+            Span::styled("[Esc] Clear", Style::default().fg(Color::DarkGray)),
+        ]),
         _ => {
             let mut spans = Vec::new();
             if !app.filter.is_empty() {
@@ -175,7 +161,10 @@ fn render_status_bar(frame: &mut Frame, app: &App, area: Rect) {
             let count = app.pending_count();
             if count > 0 {
                 spans.push(Span::styled(
-                    format!(" {count} pending change{}", if count == 1 { "" } else { "s" }),
+                    format!(
+                        " {count} pending change{}",
+                        if count == 1 { "" } else { "s" }
+                    ),
                     Style::default().fg(Color::Yellow),
                 ));
                 spans.push(Span::raw("  "));
@@ -196,6 +185,13 @@ fn render_status_bar(frame: &mut Frame, app: &App, area: Rect) {
                         format!(" ✓ {success} applied, ✗ {failed} failed"),
                         Style::default().fg(Color::Red),
                     ));
+                    if let Some(first_failed) = app.results.iter().find(|r| !r.success) {
+                        spans.push(Span::raw("  "));
+                        spans.push(Span::styled(
+                            format!("{}: {}", first_failed.service, first_failed.message),
+                            Style::default().fg(Color::DarkGray),
+                        ));
+                    }
                 }
             } else {
                 spans.push(Span::styled(
@@ -335,7 +331,9 @@ fn render_info_modal(frame: &mut Frame, app: &App) {
         .borders(Borders::ALL)
         .border_style(Style::default().fg(Color::Cyan));
 
-    let paragraph = Paragraph::new(lines).block(block).wrap(Wrap { trim: false });
+    let paragraph = Paragraph::new(lines)
+        .block(block)
+        .wrap(Wrap { trim: false });
     frame.render_widget(paragraph, modal_area);
 }
 
@@ -394,6 +392,8 @@ fn render_confirm_modal(frame: &mut Frame, app: &App) {
         .borders(Borders::ALL)
         .border_style(Style::default().fg(Color::Cyan));
 
-    let paragraph = Paragraph::new(lines).block(block).wrap(Wrap { trim: false });
+    let paragraph = Paragraph::new(lines)
+        .block(block)
+        .wrap(Wrap { trim: false });
     frame.render_widget(paragraph, modal_area);
 }

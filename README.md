@@ -5,7 +5,7 @@ A terminal UI for managing systemd services. Toggle services on/off, browse by c
 ![Rust](https://img.shields.io/badge/Rust-2021-orange) ![License](https://img.shields.io/badge/license-MIT-blue)
 
 ```
- System   User              Tab: switch  /: filter  q: quit
+ System   User              Tab: switch  /: search  q: quit
 ────────────────────────────────────────────────────────────
 ▾ Network (3)
    [✓] NetworkManager.service       Manages network connections
@@ -40,14 +40,13 @@ A terminal UI for managing systemd services. Toggle services on/off, browse by c
 ## Install
 
 ```bash
-cargo build --release
-cp target/release/comma-services ~/.local/bin/,services
+cargo install --path . --root ~/.local
 ```
 
 Then run with:
 
 ```bash
-,services
+comma-services
 ```
 
 ## Key Bindings
